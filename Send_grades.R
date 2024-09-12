@@ -19,8 +19,8 @@ df <- left_join(df, df1, by = "Vorname_Nachname") %>%
 
 #my_outlook <- get_business_outlook(app = "XXXXXXXXXXXXXXX")
  # Login online before with:
-# email
-# password
+# email XXXXX
+# password XXXXX
 my_outlook <- get_business_outlook()
 
 non_zero_points <- df[df$Punkte > 0, ]
