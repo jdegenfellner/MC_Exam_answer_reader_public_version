@@ -12,7 +12,7 @@
 # 1) In the same folder there MUST be the following files:
 #   - 1_Pruefung.tex + images folder (images in the exam)
 #     (the exam file in latex, no line breaks in the answer options)
-#   - 4_Antwortblatt_fuer_autoread.tex (DO NOT change this file)
+#   - 4_Antwortblatt_fuer_autoread.tex (DO NOT change this file, except for the title)
 #   - main_MC_Tool.R
 #   - MarkCorrectAnswers.R
 #   - Read_Points.R
