@@ -2,8 +2,6 @@
 # Juergen Degenfellner
 # Dec. 2023, ZHAW
 
-# From: https://github.com/jdegenfellner/MC_exam_Reader_public_version
-
 # TODO ----
 # - Clean up paths and folders, 
 # - Improve reading correct answers: now, images and line breaks are not handled and leads to errors

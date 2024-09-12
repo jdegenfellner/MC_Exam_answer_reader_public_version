@@ -1,8 +1,6 @@
 # Notenauswertungen
 # Juergen Degenfellner, 21.12.23
 
-# From: https://github.com/jdegenfellner/MC_exam_Reader_public_version
-
 library(pacman)
 p_load(readxl, writexl, tidyverse, data.table, fancycut)
 

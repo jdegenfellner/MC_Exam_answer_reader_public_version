@@ -1,7 +1,5 @@
 # Read_Points.R
 
-# From: https://github.com/jdegenfellner/MC_exam_Reader_public_version
-
 # Future improvements:
 # - If too imprecise, one can place red dots (or whatever) next to each row,
 #   this would give the very exact y-location of the 25 rows.

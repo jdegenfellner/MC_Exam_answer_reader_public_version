@@ -1,5 +1,4 @@
 # Send_grades.R
-# From https://github.com/jdegenfellner/MC_Exam_answer_reader
 
 library(pacman)
 p_load(tidyverse,readxl, sendmailR, writexl, 
