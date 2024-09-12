@@ -1,0 +1,469 @@
+\documentclass[10pt,addpoints]{exam}
+% Entfernen Sie die Option answers, wenn Sie die Version für die Studenten ohne die Antwort-Hinweise kompilieren möchten
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage[left=1cm,right=1cm]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{positioning, calc}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{tikz}
+\usetikzlibrary{patterns}
+\usepackage{booktabs}
+
+
+\begin{document}
+
+\begin{center}
+\textbf{\Huge Prüfung aus Quantitative Methoden 2 2024} \\
+\vspace{0.5cm}
+Jürgen Degenfellner\\
+\vspace{0.5cm}
+\textbf{\large 2.5.2024}
+\end{center}
+\vspace{1cm}
+
+\noindent Name: \fbox{\begin{minipage}{0.4\linewidth}
+        \vspace{1mm}
+        \hspace{0.3\linewidth}
+        \vspace{5mm}
+    \end{minipage}} \\
+    
+\vspace{5mm} % Erhöhen Sie diesen Wert, um den Abstand zwischen den Boxen zu vergrössern
+
+\noindent Matrikelnummer: \fbox{\begin{minipage}{0.4\linewidth}
+        \vspace{1mm}
+        \hspace{0.3\linewidth}
+        \vspace{5mm}
+    \end{minipage}}
+
+\vspace{10mm}
+
+\noindent In den folgenden Aufgaben ist immer mindestens eine Antwortmöglichkeit und maximal vier Antwortmöglichkeiten korrekt. Die korrekten Antworten sind auf dem separaten Antwortblatt anzukreuzen. \textbf{Nur} die dort angekreuzten Antworten werden gewertet. \\
+\\
+Details Punktemodalitäten: Die minimale Punktezahl pro Frage ist 0, die maximale ist 4. Die Punkte werden nach dem \textit{Partial credit} Prinzip vergeben. Die Anzahl der Punkte pro Frage errechnet sich aus: Punktemaximum minus Anzahl der Fehler. Fehler sind \\
+ - nicht angemalte Antworten, die jedoch richtig sind und \\
+ - angemalte Antworten, die jedoch falsch sind. \\
+\\
+Folgende \textbf{Hilfsmittel} sind erlaubt: Ein A4 Blatt mit handschriftlichen Notizen, leere Notizblätter, dokumentenechter Stift (kein Bleistift), schwarzer Filzstift für die Antworten, nicht-programmierbarer Taschenrechner. Notizblätter müssen gemeinsam mit der Prüfung abgegeben werden. 
+\vspace{1cm}
+
+Viel Erfolg!
+
+\newpage
+
+\begin{questions}
+
+%1
+\question Welche Aussage(n) ist/sind bezüglich des multiplen Regressionsmodells korrekt?
+\begin{eqnarray}
+Y_i = \beta_0 + \beta_1x_{i1} + \beta_2x_{i2} + \dots + \beta_jx_{ij} + \dots + \beta_px_{ip} + \varepsilon_i, \quad i = 1, \dots, n.
+\end{eqnarray}
+
+\begin{choices}
+\CorrectChoice Die Spalten (Variablen) der Design-Matrix $X$ sind linear unabhängig bzw. sollten es sein.
+\CorrectChoice Man nimmt eine lineare Beziehung zwischen den erklärenden Variablen und $Y$ an (zumindest im Erwartungswert).
+\choice $Corr(\varepsilon_i, \varepsilon_j) = 1$, für alle $i \ne j$.
+\CorrectChoice $\mathbb{E}(\varepsilon_i) = 0$, für alle $i \in \{1,..,n\}$.
+\end{choices}
+
+%2
+\question Bei welchen der folgenden Modelle handelt es sich um ein \textit{lineares} Regressionsmodell?
+\begin{choices}
+\CorrectChoice $Y_i = \beta_0 + \beta_1 e^{x_{i1}} + \varepsilon_i$
+\CorrectChoice $Y_i = \beta_0 + \beta_1 \frac{1}{x_{i1}} + \beta_2 x_{i2}^2 + \varepsilon_i$
+\CorrectChoice $ Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \varepsilon_i$
+\choice $ Y_i = \beta_0 + \log(\beta_1 x_{i1}) + \beta_2 \sqrt{x_{i2}} + \varepsilon_i$
+\end{choices}
+
+%3
+\question Welche der folgenden Aussage(n) über dieses konkrete Regressionsmodell ist/sind wahr?
+
+\[
+Y_i = \beta_1 + \beta_2 I(x_i) + \varepsilon_i, \quad I(x_i) = 
+\begin{cases} 
+1, & \text{wenn } x_i = 1 \\
+0, & \text{wenn } x_i = 0 
+\end{cases}
+\]
+
+\[
+\begin{pmatrix}
+Y_1 \\
+Y_2 \\
+\vdots \\
+Y_i \\
+\vdots \\
+Y_n
+\end{pmatrix}
+=
+\begin{pmatrix}
+1 & 0 \\
+1 & 0 \\
+\vdots & \vdots \\
+1 & 1 \\
+\vdots & \vdots \\
+1 & 1
+\end{pmatrix}
+\begin{pmatrix}
+\beta_1 \\
+\beta_2
+\end{pmatrix}
++
+\begin{pmatrix}
+\varepsilon_1 \\
+\varepsilon_2 \\
+\vdots \\
+\varepsilon_i \\
+\vdots \\
+\varepsilon_n
+\end{pmatrix}
+\]
+
+\begin{choices}
+\choice Figure \ref{fig:regressionsmodell_daten} zeigt mögliche Daten für dieses Regressionsmodell:\\
+\choice Das Matrixprodukt aus der Design-Matrix und dem Koeffizienten-Vektor ergibt eine $n$ mal $2$ Matrix.
+\CorrectChoice Der zweite Parameter ($\beta_2$) steht für den erwarteten Unterschied in der Zielgrösse zwischen der zweiten und der ersten Gruppe.
+\CorrectChoice Das Regressionsmodell ist äquivalent mit dem Zweistichproben-\textit{t}-Test mit homogenen Varianzen.
+\end{choices}
+
+%4
+\question Welche der folgenden Aussage(n) über den R-Output in Figure \ref{fig:regression_fertility} ist/sind wahr?\\
+\\
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{./images/swiss_Fertility_lm.png}
+\caption{R-Output}
+\label{fig:regression_fertility}
+\end{figure}
+
+\begin{choices}
+\CorrectChoice Die p-Werte in der letzten Spalte des Outputs beziehen sich auf die Hypothese, dass der jeweilige Parameter 0 ist: $H_0: \beta_j = 0$.
+\choice Angenommen man weiß, dass der durch das Modell geschätzte Wert für die erste Beobachtung $\hat{Y_1} = 74.61530$ ist. Man erhält diesen
+\CorrectChoice Es wurden alle im Datensatz verfügbaren Variablen als Prädiktorvariablen für $Fertility$ verwendet.
+\choice Der Datensatz \textit{swiss} für die Erstellung des Modells hat $41$ Beobachtungen. 
+\end{choices}
+
+%5
+\question Welche der folgenden Aussage(n) über den R-Code (Figure \ref{fig:Rsquared_code}) und das Histogramm (Figure \ref{fig:Rsquared_hist}) ist/sind wahr (die beiden Abbildungen gehören zusammen)?\\
+
+\begin{figure}[h!]
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{./images/Rsquared_code.png}
+        \caption{R-Code}
+        \label{fig:Rsquared_code}
+        %\caption{R-Code}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{./images/Rsquared_hist.pdf}
+         \caption{Histogramm}
+        \label{fig:Rsquared_hist}
+        %\caption{Histogramm}
+    \end{minipage}
+\end{figure}
+
+\begin{choices}
+\choice Die letzte Zeile des R-Codes gibt das 99\%-Quantil für $R^2$, also den Wert, wo ca. 99\% der Werte darüber liegen.
+\CorrectChoice Mit diesem R-Code wird die Verteilung von $R^2$ bei Einfachregression simuliert, wenn zwei normalverteilte Größen $x,y$ unabh
+\CorrectChoice Rein grafisch betrachtet sind mehr als 50\% der simulierten $R^2$ unter $0.001$. 
+\choice Das Histogramm zeigt, dass bei Unabhängigkeit von $x,y$ $R^2$ normalverteilt ist.
+\end{choices}
+
+%6
+\question Wir sehen einen Screenshot (Figure \ref{fig:Simple_Regression_Simulation_narrow}) unseres Shiny-Apps, das die lineare Einfachregression simuliert. Ich habe hier wiederholt auf den \textit{Refresh}-Button gedrückt und folgendes Ergebnis erhalten (siehe unten). Welche Aussage(n) ist/sind bezüglich des Screenshots korrekt?
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{./images/Simple_Regression_Simulation_narrow.png}
+\caption{Screenshot Shiny}
+\label{fig:Simple_Regression_Simulation_narrow}
+\end{figure}
+
+\begin{choices}
+\CorrectChoice Der wahre, aber hier bekannte Parameter für $\beta_1$ ist $0$.
+\choice Der wahre, aber (normalerweise) unbekannte Parameter für $\beta_2$ ist von $0$ verschieden. 
+\choice Wenn man weiter auf den \textit{Refresh}-Button drückt, wird (im Durchschnitt) häufiger eine negative Schätzung für $\beta_2$ auftret
+\CorrectChoice Das blau gestrichelte Konfidenzband ist breiter, da bei der individuellen Prediction die Unsicherheit der Vorhersage höher ist. 
+\end{choices}
+
+%7
+\question Welche Aussage(n) über einfache bzw. multiple lineare Regression ist/sind wahr?
+
+\begin{choices}
+\CorrectChoice Die Koeffizienten einfacher linearer Regressionen entsprechen denen der multiplen linearen Regression, wenn d
+\choice Einfache lineare Regressionen können komplexere Beziehungen abbilden als multiple lineare Regressionen.
+\choice Multiple lineare Regressionen erfordern, dass alle Variablen kontinuierlich sind.
+\choice Die Koeffizienten der einfachen linearen Regression sind durchschnittlich größer als die der multiplen linearen Regression.
+\end{choices}
+
+%8
+\question Welche der folgenden Aussage(n) über die beiden Abbildungen (Figure \ref{fig:Simpson_2}, Figure \ref{fig:Simpson_1}) ist/sind wahr?\\
+
+\begin{figure}[h!]
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{./images/Simpson_2.png}
+        \caption{links}
+        \label{fig:Simpson_2}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{./images/Simpson_1.png}
+        \caption{rechts}
+                \label{fig:Simpson_1}
+    \end{minipage}
+\end{figure}
+
+\begin{choices}
+\choice Um den Zusammenhang von $X$ und $Y$ zu modellieren, werden mehrere Regressionsmodelle benötigt.
+\CorrectChoice Die beiden Abbilungen illustrieren das sogenannte \textit{Simpson Paradox}. 
+\CorrectChoice Die Schätzung der Steigung der Regressionsgeraden ändert ihr Vorzeichen, wenn man d
+\choice Für eine große Stichprobe erhält man sowohl mit dem Ansatz im linken aus auch mit dem Ansatz im rechten Bild ähnliche Aussagen.
+\end{choices}
+
+%9
+\question Gegeben seien die Matrizen $A, B$. Welche der folgenden Aussage(n) ist/sind wahr?\\
+
+\begin{minipage}{.3\linewidth}
+\[ A = \begin{pmatrix}
+1 & 0 \\
+0 & 2
+\end{pmatrix} \]
+\end{minipage}%
+\begin{minipage}{.3\linewidth}
+\[ B = \begin{pmatrix}
+3 & 0 \\
+0 & 4
+\end{pmatrix} \]
+\end{minipage}
+\\
+\begin{choices}
+\CorrectChoice $AB = BA$.
+\choice Matrixmultiplikation ist kommutativ (vertauschbar). 
+\CorrectChoice Die Transpoinierte $A^T$ von $A$ ist identisch mit $A$. 
+\choice Die Transponierte von $B$ ist identisch mit ihrer Inversen $B^{-1}$ (Info: $B^{-1} = \frac{1}{ad - bc}
+\end{choices}
+
+%10
+\question Welche Aussage(n) über den p-Wert ist/sind wahr?
+\begin{choices}
+\choice Der p-Wert ist die Wahrscheinlichkeit, dass die Nullhypothese wahr ist, gegeben die beobachteten Daten.
+\choice Der p-Wert ist die Wahrscheinlichkeit, dass die Alternative Hypothese wahr ist, gegeben die beobachteten Daten.
+\CorrectChoice Der p-Wert ist die Wahrscheinlichkeit, unter der Annahme der Nullhypothese, eine Teststatistik zu erhalten, di
+\choice Der p-Wert ist die minimale Signifikanzschwelle von 0.05, bei der die Nullhypothese verworfen wird.
+\end{choices}
+
+%11
+\question Ein lineares Regressionsmodell wurde geschätzt. Unten ist ein dazugehöriger Plot (Figure \ref{fig:residuenplot}) dargestellt. Welche Aussage(n) ist/sind  korrekt?
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\linewidth]{./images/Residuenplot.png}
+\caption{Plot}
+\label{fig:residuenplot}
+\end{figure}
+
+
+\begin{choices}
+\CorrectChoice Es handelt sich bei der Abbildung um einen Tukey-Anscombe Plot.
+\choice Es besteht kein Zusammenhang zwischen dem Prädiktor und der abhängigen Variable. 
+\CorrectChoice Das aktuelle Regressionsmodell erfasst die Struktur der Daten noch nicht hinreichend gut und sollte angepasst werden.
+\CorrectChoice Ein quadratischer Zusammenhang zwischen dem Prädiktor und der abhängigen Variablen kann durch ein \textit{lineares} Regressionsmodell dargestellt werden.
+\end{choices}
+
+%12
+\question Wir erinnern uns and die Ausführungen aus dem R-File \textit{H\_0\_and\_the\_truth.R} (siehe Screenshot aus dem R-Programm, Figure \ref{fig:screenshot_RStudio}). Welche Aussage(n) ist/sind hinsichtlich Hypothesentesten korrekt?
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.3\linewidth]{./images/H_0_and_truth.png}
+\caption{Screenshot aus RStudio}
+\label{fig:screenshot_RStudio}
+\end{figure}
+
+\begin{choices}
+\CorrectChoice Falls $\alpha=0.05$ und $\beta=0.2$, dann ist die Wahrscheinlichkeit dafür eine falsche Testentscheidung zu treffen $12.5\%$.
+\CorrectChoice Ein $\beta$-Fehler oder \textit{Fehler 2. Art} ist die Wahrscheinlichkeit, unter der Annahme, das
+\CorrectChoice Ein $\alpha$-Fehler oder \textit{Fehler 1. Art}, ist die Wahrscheinlichkeit, unter der Annahme, das
+\CorrectChoice $1-\beta$ heißt auch \textit{Power}.
+\end{choices}
+
+%13
+\question Welche Aussage(n) hinsichtlich der dargestellten Modelle aus der Messtheorie (Figure \ref{fig:models}) ist/sind korrekt?
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{./images/Reflexiv_Formativ_Qm2.png}
+\caption{Modellkonzepte}
+\label{fig:models}
+\end{figure}
+
+\begin{choices}
+\choice Links sieht man das Schema eines formativen Modells, rechts sieht man das Schema eines reflexiven Modells.
+\CorrectChoice Unbeobachtbare Konstrukte erfordern Messtheorie. 
+\choice Im formativen Modell gilt: $\eta = X_i + \delta$, für $i = 1,...,4$.
+\CorrectChoice Die Fehler $\varepsilon_i$ sind im Mittel 0.
+\end{choices}
+
+%14
+\question Welche Annahme(n) wird/werden in der \textit{Classical Test Theory (CTT)} getroffen?
+
+\begin{choices}
+\choice $E(\varepsilon_i) = E(Y_i) = \eta$.
+\CorrectChoice $\text{Corr}(\varepsilon_i, \eta) = 0$.
+\CorrectChoice $\text{Corr}(\varepsilon_i, \varepsilon_j) = 0$ für $i \neq j$.
+\choice Der wahre Score $\eta$ ist beobachtbar.
+\end{choices}
+
+%15
+\question Welche Aussage(n) ist/sind beim \textit{Rasch}-Modell ($\alpha_j=1$ und 5 Items) in der IRT korrekt?
+
+\begin{choices}
+\CorrectChoice Jedes Item diskriminiert gleich stark/gut.
+\choice Angenommen, eine Person hat $ability = -2$. Die Wahrscheinlichkeit, dass die Person mit $1$ antwortet, ist bei allen Items gleich groß.
+\choice Die Kurven zur Modellierung der Antwortwahrscheinlichkeiten schneiden sich.
+\choice Kurven zur Modellierung der Antwortwahrscheinlichkeiten werden je nach Item (abhängig von $\beta_j$) auf der y-Achse verschoben.
+\end{choices}
+
+%16
+\question Welche Aussage(n) über das Bayes-Theorem $p(\theta | x) = \frac{p(x | \theta) \cdot p(\theta)}{p(x)}$ ist/sind korrekt?
+
+\begin{choices}
+\choice $p(x)$ stellt das Vorwissen dar, das man über den interessierenden Parameter $\theta$ hat.
+\choice $p(x | \theta)$ nennt man auch \textit{posterior distribution} des interessierenden Parameters $\theta$.
+\CorrectChoice $p(x)$ ist im Allgemeinen schwer zu berechnen, weshalb man Monte Carlo Methoden verwendet.
+\CorrectChoice In der Bayes-Praxis erspart man sich die Bestimmung der Verteilung einer Teststatistik unter $H_0$.
+\end{choices}
+
+%17
+\question Wir führen wieder die Regression von $Fertility$ auf alle anderen Variablen im Datensatz $swiss$ aus, nur diesesmal mit Bayes-Regression. Figure \ref{fig:posterior} zeigt die \textit{posterior distribution} des Effekts von Agriculture (auf Fertility). Welche Aussage(n) ist/sind korrekt?
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\linewidth]{./images/posterior_Agriculture.png}
+\caption{Posterior}
+\label{fig:posterior}
+\end{figure}
+
+\begin{choices}
+\CorrectChoice Mit Hilfe dieser Verteilung kann die Wahrscheinlichkeit bestimmen, dass der Effekt zw
+\CorrectChoice Wenn man Vorwissen aus anderen Studien einfließen lässt, kann sich die Form der \textit{posterior distribution} dadurch ändern.
+\choice Den klassischen p-Wert (bezüglich $H_0: \beta_{Agriculture}=0$) für diesen Effekt kann man aus dieser Verteilung berechnen. 
+\choice Der Effekt $0$ kann hier ausgeschlossen werden, da die Wahrscheinlichkeit dafür, dass der Effekt $\ge 0$ ist, ebenfalls $0$ ist.
+\end{choices}
+
+%18
+\question Welche Aussage(n) hinsichtlich \textit{Confidence Intervals} (klassische Statistik) und \textit{Credible Intervals} (Bayes) ist/sind korrekt?
+\begin{choices}
+\CorrectChoice Für ein konkretes (klassisches) Konfidenzinterval gilt: Der wahre aber unbekannte Parameter ist darin enthalten oder nicht.
+\choice Sei $[a,b]$ ein 95\%-Konfidenzintervall für einen unbekannten aber, festen Parameter. Die Wahrscheinlich
+\CorrectChoice Sei $[a,b]$ ein 95\% \textit{Credible interval}, das wir z.B. durch Bayes-Regression gefunden hab
+\CorrectChoice Wenn man viele (klassische) Konfidenzintervalle erzeugt, überdecken ca. 95\% der Intervalle den wahren, aber unbekannten Parameter.
+\end{choices}
+
+%19
+\question Welche Aussage(n) über $\textit{Reliability}=\frac{\sigma^2_p}{\sigma^2_p + \sigma^2_\varepsilon}$ ist/sind korrekt?
+ 
+\begin{choices}
+\choice Wäre $\sigma^2_\varepsilon$ dreimal so groß wie $\sigma^2_p$, wäre die Reliabilität $0.5$.
+\choice Großes $\sigma^2_\varepsilon$, also große Residualvarianz, kann auch durch großes $\sigma^2_p$ nicht kompensiert werden.
+\CorrectChoice Bei fixer Residualvarianz $\sigma^2_\varepsilon$ gilt: Je größer $\sigma^2_p$, desto größer ist die Reliabilität.
+\choice Die Reliabilitätskoeffizienten, die wir kennengelernt haben (ICCs), sind robust gegenüber Ausreißern.
+\end{choices}
+
+
+%20
+\question Welche Aussage(n) über die Reliabilität eines Summenscores ($\textit{Reliability}=\frac{\sigma^2_p}{\sigma^2_p + \frac{\sigma^2_\varepsilon}{k}}$) ist/sind korrekt?
+
+\begin{choices}
+\CorrectChoice Durch Erhöhung von $k$ kann man den Summenscore beliebig reliabel machen.
+\CorrectChoice Sehr homogene Patientenpopulationen haben im Allgemeinen eher geringe Reliabilität.
+\CorrectChoice $ICC_{agreement}$ und $ICC_{consistency}$ basieren auf demselben statistischen Modell.
+\choice Pearson-Korrelation und Reliabiltität messen dasselbe; und zwar die Stärke des linearen Zusammenhangs.
+\end{choices}
+
+%21
+\question Welche Aussage(n) ist/sind hinsichtlich des Bland-Altman-Plots unten (Figure \ref{fig:bland}) korrekt, wenn eine neue Messmethode mit dem Goldstandard verglichen wird?
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\linewidth]{./images/bland_altman.png}
+\caption{Bland-Altman-Plot}
+\label{fig:bland}
+\end{figure}
+
+\begin{choices}
+\CorrectChoice Da die \textit{Limits of Agreement} aus einer Stichprobe bestimmt werden, werde
+\choice Man hat insgesamt eine gute Übereinstimmung, da die Punkte weitestgehend innerhalb der \textit{Limits of Agr
+\CorrectChoice Der \textit{Bias} ist ungefähr $0$.
+\choice Die Messmethoden stimmen auf dem gesamten Wertebereich der beiden Methoden gut überein.
+\end{choices}
+
+%22
+\question Welche Voraussetzung(en) muss/müssen in einer linearen Regression erfüllt sein, um von Homoskedastizität sprechen zu können?
+
+\begin{choices}
+\choice Die beobachteten Werte der abhängigen Variable folgen einer Normalverteilung.
+\CorrectChoice Die Varianz der Residuen bleibt über den gesamten Wertebereich der unabhängigen Variablen konstant.
+\choice Die Regressionslinie ist linear.
+\choice Es besteht keine Korrelation zwischen den unabhängigen Variablen.
+\end{choices}
+
+%23
+\question Zwei Rater bestimmen ein dichotomes Merkmal (vorhanden/nicht vorhanden) und haben dabei folgende Übereinstimmungen
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{ccc}
+\hline
+       & RaterB + & RaterB - \\ \hline
+RaterA + & 31       & 16       \\
+RaterA - & 7        & 24       \\ \hline
+\end{tabular}
+%\caption{Übereinstimmung zwischen Rater A und Rater B}
+%\label{tab:my_label}
+\end{table}
+
+Welche Aussage(n) ist sind korrekt?
+
+\begin{choices}
+\choice Die Rater sind in perfekter Übereinstimmung, wenn der Wert von Cohen's $\kappa$ gleich $1$ oder $-1$ ist.
+\choice Cohen's $\kappa=0.36$.
+\CorrectChoice Cohen's $\kappa$ kann verwendet werden, um die Übereinstimmung 
+\CorrectChoice Die Rater stimmen in ca $70.5$\% der Fälle überein.
+\end{choices}
+
+%24
+\question Welche Aussage(n) über das Bestimmtheitsmaß \( R^2 \) im Zusammenhang mit Regressionsmodellen trifft/treffen zu?
+
+\begin{choices}
+\choice In Fälle der Einfachregression (\( y_i = \beta_0 + \beta_1x_i + \varepsilon_i \)) ist das Bestimmtheitsmaß \( R^2 \) die Korrelation zwischen der
+\CorrectChoice Das Bestimmtheitsmaß \( R^2 \) ist ein statistisches Maß, das den Anteil der Varianz der abhängigen Variable angibt, der durch d
+\CorrectChoice \( R^2 \) ist immer nicht-negativ (\( \geq 0 \)).
+\choice Bei Regressionsanalysen ist \( R^2 = 1 \) der wünschenswerte Idealfall.
+\end{choices}
+
+%25
+\question Welche Aussage(n) zum AIC ist/sind richtig?
+
+\begin{choices}
+\choice Das AIC steigt beim Hinzufügen von Parametern immer.
+\CorrectChoice Das AIC bestraft Modellkomplexität.
+\choice Das präferierte Modell ist das mit dem größeren AIC.
+\CorrectChoice Der Maximum-Likelihood Schätzer ist relevant für das AIC.
+\end{choices}
+
+
+\printanswers
+\end{questions}
+
+
+
+\end{document}
