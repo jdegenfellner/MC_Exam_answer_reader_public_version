@@ -2,21 +2,17 @@
 # Juergen Degenfellner
 # Dec. 2023, ZHAW
 
-# From: https://github.com/jdegenfellner/MC_Exam_answer_reader
-
-# TODO 
+# TODO ----
 # - Clean up paths and folders, 
 # - Improve reading correct answers: now, images and line breaks are not handled and leads to errors
 # - Work on a question pool and create new exams semi-automatic:
 #   -> Questions are read randomly from the pool, answer options are randomly twisted
-# - We need an AUTOCALIBRATE!!!
 
 # How to use this tool----
-# TODO update, now you have to print the answer sheets with all gray but the boxes in order to determine the position of the boxes on the sheet
 # 1) In the same folder there MUST be the following files:
 #   - 1_Pruefung.tex + images folder (images in the exam)
 #     (the exam file in latex, no line breaks in the answer options)
-#   - 4_Antwortblatt_fuer_autoread.tex (DO NOT change this file)
+#   - 4_Antwortblatt_fuer_autoread.tex (DO NOT change this file, except for the title)
 #   - main_MC_Tool.R
 #   - MarkCorrectAnswers.R
 #   - Read_Points.R
@@ -26,9 +22,10 @@
 # 2) USE:
 #    Step 1: Scan the answer sheets in any order and save the pdf into the folder "ABGABEN".
 #    Step 2: Adapt the file name to fit the filename in Read_Points.R ca. line 17.
-#    Step 3: Adapt the file path to Identifikationsnummern.xlsx in Read_Points.R.
+#    Step 3: Adapt the file path to Identifikationsnummern.xlsx in Read_Points.R ca. line 156.
 #    Step 4: Execute the code below here.
 #    Step 5: The results should be in the file Namen_Punkte.xlsx.
+#    Step 6: Go to Send_grades.R, adapt the details and send grades/points to students.
 
 # If you want a template file with the correct solutions on the answer sheet:
 # - Open MarkCorrectAnswers.R.
@@ -37,23 +34,12 @@
 # - Find the answer template in "3_Antwortblatt_Loesungen.pdf".
 
 library(pacman)
-
-#if (!requireNamespace("BiocManager", quietly = TRUE))
-#  install.packages("BiocManager")
-#BiocManager::install("EBImage")
 p_load(tidyverse, pdftools, magick, EBImage, readxl, writexl)
 
 # Set working directory to source file location
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
-# Paths and Files---
 source("./MarkCorrectAnswers.R") 
-
-# Paths:
 source("./Read_Points.R")
-
-# Paths:
 source("./Notenberechnung.R")
-
-# Paths...
 source("./Send_grades.R")
