@@ -1,317 +1,514 @@
 # Read_Points.R
+# From: https://github.com/jdegenfellner/MC_Exam_answer_reader
 
-# Future improvements:
-# - If too imprecise, one can place red dots (or whatever) next to each row,
-#   this would give the very exact y-location of the 25 rows.
-# - Further improvement (to recognize distortion), a coordinate system relative 
-#   to more than one point could be introduced.
-# - one could also make the windows larger and detect the black box itself
-# - one can put an anchor at the beginning and the end of the identification
-#   numbers and interpolate linearly
+# File info:-------
+# This script reads scanned multiple-choice exam answer sheets,
+# extracts the filled answer boxes and identification numbers,
+# and calculates the scores based on a predefined answer key.
 
-# Note: Currently box positions for answers and identification numbers
-# are determined manually in the calibration file.
-
-# CAUTION: An error occurs if less than 50 identification numbers are in the 
-# file Idendifikationsnummern.xlsx
+# TODO - issues-----------
+# - Manuelle Korrekturen der Box-Positionen (OFFSET) sind nötig
+# - Automatisierte Kalibrierung der Box-Positionen
 
 library(pacman)
-p_load(tidyverse, pdftools, magick, EBImage, readxl, writexl, data.table)
+p_load(tidyverse, pdftools, magick, EBImage,
+       reticulate, readxl, writexl, data.table, tictoc)
 
-# Set working directory
-# Example
-setwd(".../MC_Exam_answer_reader_COPY_PASTE_FROM_orig_Git_folder")
+# Set working directory to source file location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
-# READ ----
-# Example
-pdf_path <- "..../Pruefung_Antritt_1_6.6.24_Scan1.pdf"
+getwd()
 
-# Functions----
-choose_anchor_point <- function(object_centers) {
-  for(i in 1:4){
-    y_middle <- mean(c(min(object_centers[,"m.cy"]), max(object_centers[,"m.cy"])))
-    x_middle <- mean(c(min(object_centers[,"m.cx"]), max(object_centers[,"m.cx"])))
-    if(object_centers[i,"m.cx"] < x_middle &
-       object_centers[i,"m.cy"] < y_middle){
-      upper_left <- object_centers[i,c("m.cx","m.cy")]
-    }
-    if(object_centers[i,"m.cx"] > x_middle &
-       object_centers[i,"m.cy"] < y_middle) {
-      upper_right <- object_centers[i,c("m.cx","m.cy")]
-    }
-  }
-  return(list(upper_left = upper_left, upper_right = upper_right))
+#use_virtualenv(".venv")  # or complete path:
+use_virtualenv("~/Library/Mobile Documents/com~apple~CloudDocs/1_ZHAW/MC_Exam_answer_reader/.venv")
+py_config()
+
+getwd()
+
+py_run_string("
+import cv2
+import numpy as np
+from pdf2image import convert_from_path
+
+# PDF in Bild umwandeln
+#pages = convert_from_path('4_Antwortblatt_fuer_autoread_for_determination_of_box_positions_SCANNED.pdf', dpi=600)
+pages = convert_from_path('4_Antwortblatt_fuer_autoread_for_determination_of_box_positions.pdf', dpi=600)
+pages[0].save('Antwortblatt_tmp.png', 'PNG')
+
+# Bild einlesen & drehen (180°)
+image = cv2.imread('Antwortblatt_tmp.png', cv2.IMREAD_GRAYSCALE)
+image_rotated = cv2.rotate(image, cv2.ROTATE_180)
+
+# Binarisieren (angepasster Schwellwert)
+_, thresh = cv2.threshold(image_rotated, 180, 255, cv2.THRESH_BINARY_INV)
+
+# Konturen finden
+contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+# Kästchen extrahieren (nach Fläche filtern)
+boxes = []
+box_counter = 0
+for cnt in contours:
+    x, y, w, h = cv2.boundingRect(cnt)
+    area = cv2.contourArea(cnt)
+    if 6200 < area < 7800:
+        cx = x + w / 2   # center x
+        cy = y + h / 2   # center y
+        #boxes.append((cx, cy))
+        boxes.append((cx, cy, w, h))
+        box_counter += 1
+        print('found at:', cx, cy, 'box counter:', box_counter)
+# ---
+#areas = []
+#wh = []
+#for cnt in contours:
+#    x,y,w,h = cv2.boundingRect(cnt)
+#    a = cv2.contourArea(cnt)
+#    areas.append(a)
+#    wh.append((w,h))
+
+#areas = np.array(areas, dtype=float)
+#wh = np.array(wh, dtype=float)
+
+#print('n contours:', len(areas))
+#print('area min/median/max:', areas.min(), np.median(areas), areas.max())
+#print('area quantiles:', np.percentile(areas, [1,5,10,25,50,75,90,95,99]))
+
+# ---
+
+# Sortieren nach Zeile + Spalte
+boxes_sorted = sorted(boxes, key=lambda k: (k[1], k[0]))
+boxes_array = np.array(boxes_sorted)
+")
+# should find 150 box positions: 50 identification + 100 answer boxes:
+py$box_counter # 150
+
+box_positions <- py$boxes_array # get result
+dim(box_positions) # 150 x 4
+head(box_positions)
+
+mean_box_width  <- mean(box_positions[,3]) # 84
+mean_box_height <- mean(box_positions[,4]) # 84
+
+col_crosses <- "purple"
+
+plot(box_positions[,1], box_positions[,2], pch = 19, col = col_crosses,,
+     main = "Found box positions", xlab = "X", ylab = "Y")
+# -> works!
+
+# # Read manually filled answer sheet and test positions found above------------
+
+# Coordinate system:
+# ------> x
+# |
+# |
+# |
+# v
+# y
+
+# Lade das eingesannte, manuell ausgefüllte Blatt (erste Seite als PNG)
+getwd()
+dir.create("ABGABEN/_png", showWarnings = FALSE)
+system2("mutool", c(
+  "draw",
+  "-r", "600",
+  "-o", "ABGABEN/_png/TEST_%03d.png",
+  "ABGABEN/QM1_17.12.25_Scan1_007.pdf"
+))
+img_filled <- image_read("ABGABEN/_png/page_001.png")
+print(img_filled) # nice
+
+img_info <- image_info(img_filled)
+img_height <- img_info$height
+
+# Koordinaten um 180° drehen (Spiegelung in X + Y)
+box_positions_rotated <- box_positions
+box_positions_rotated[,1] <- img_info$width - box_positions[,1]
+box_positions_rotated[,2] <- img_height - box_positions[,2]
+
+# Define OFFSET for ALL 150 answer boxes----------
+# This moves all box centers
+
+# a) offset for pdf, not scanned:
+x_offset <- 165 # negative Werte nach links/positiv nach rechts
+y_offset <- -405  # positive Werte nach unten/negativ nach oben
+
+# b) offset for scanned version:
+#---
+
+box_positions_rotated[,1] <- box_positions_rotated[,1] + x_offset
+box_positions_rotated[,2] <- box_positions_rotated[,2] + y_offset
+
+plot(box_positions_rotated) # image upside down
+
+#CHECKING box positions-----------
+tic()
+img_filled <- image_draw(img_filled)
+for (i in 1:nrow(box_positions_rotated)) {
+  cx <- box_positions_rotated[i, 1]
+  cy <- box_positions_rotated[i, 2]
+
+  #img_filled <- image_draw(img_filled)
+  #segments(cx - 10, cy - 10, cx + 10, cy + 10, col = "red", lwd = 3)
+  #segments(cx - 10, cy + 10, cx + 10, cy - 10, col = "red", lwd = 3)
+  segments(cx - mean_box_width/2, cy - mean_box_height/2, 
+           cx + mean_box_width/2, cy + mean_box_height/2, 
+           col = col_crosses, lwd = 3)
+  segments(cx - mean_box_width/2, cy + mean_box_height/2, 
+           cx + mean_box_width/2, cy - mean_box_height/2, 
+           col = col_crosses, lwd = 3)
+  
+  #dev.off()
 }
+dev.off()
+toc() # 6s
+#image_write(img_filled, "DEBUG_Kreuze_eingezeichnet_rotated.png")
+print(img_filled)
+# -> this should show red crosses perfectly in all box positions.
 
-is_filled <- function(center_x, center_y, box_size, img, threshold = 0.5) {
-  geometry_string <- paste0(box_size, "x", box_size, "+", 
-                            center_x - box_size / 2, "+", 
-                            center_y - box_size / 2)
+
+# Identify ID-Boxes----------------------
+id_boxes <- box_positions_rotated[box_positions_rotated[,2] < 0.4 * img_height, ]
+id_boxes_sorted <- id_boxes[order(id_boxes[,2], id_boxes[,1]), ]
+
+# Identify answer boxes----------------
+answer_boxes <- box_positions_rotated[box_positions_rotated[,2] >= 0.4 * img_height, ]
+
+
+# Define OFFSET ID boxes-------------
+# This only moces ID box centers (if needed)
+x_offset_id <-0 # negative Werte nach links/positiv nach rechts
+y_offset_id <- 0  # positive Werte nach unten/negativ nach oben
+id_boxes_sorted[,1] <- id_boxes_sorted[,1] + x_offset_id
+id_boxes_sorted[,2] <- id_boxes_sorted[,2] + y_offset_id
+
+# CHECK ID boxes--------------
+tic()
+img_filled <- image_draw(img_filled)
+for (i in 1:nrow(id_boxes_sorted)) {
+  cx <- id_boxes_sorted[i, 1]
+  cy <- id_boxes_sorted[i, 2]
+  
+  #img_filled <- image_draw(img_filled)
+  segments(cx - 10, cy - 10, cx + 10, cy + 10, col = "red", lwd = 3)
+  segments(cx - 10, cy + 10, cx + 10, cy - 10, col = "red", lwd = 3)
+  #dev.off()
+}
+dev.off()
+toc() # 6s
+plot(img_filled)
+
+
+#----
+
+
+# Antworten sortieren (nach Zeile/Y und Spalte/X)
+answer_boxes_sorted <- answer_boxes[order(answer_boxes[,2], answer_boxes[,1]), ]
+
+df_points <- as.data.frame(answer_boxes_sorted)
+colnames(df_points) <- c("V1", "V2", "width", "height")
+
+#plot(df_points$V1, df_points$V2)
+
+# Median X-Wert als Schwelle
+x_threshold <- mean(df_points$V1)
+
+# Links und rechts aufteilen
+df_left <- df_points %>% dplyr::filter(V1 < x_threshold)
+df_right <- df_points %>% dplyr::filter(V1 >= x_threshold)
+#dim(df_left) # 48 rows = 12 questions x 4 options
+#dim(df_right) # 52 rows = 13 questions x 4 options
+
+# Sortiere links: erst Y (von oben nach unten), dann X
+df_left_sorted <- df_left %>%
+  dplyr::arrange(V2, V1) %>%
+  dplyr::mutate(question = rep(1:12, each = 4),
+         option = rep(c("A", "B", "C", "D"), 12))
+
+# Sortiere rechts: auch Y dann X
+df_right_sorted <- df_right %>%
+  dplyr::arrange(V2, V1) %>%
+  dplyr::mutate(question = rep(13:25, each = 4),
+         option = rep(c("A", "B", "C", "D"), 13))
+
+df_points_final <- bind_rows(df_left_sorted, df_right_sorted) %>%
+  arrange(question, option)
+
+
+
+# Functions---------------------------------------------------------------------
+check_if_filled <- function(center_x, center_y, box_size, img, threshold = 0.5) {
+  geometry_string <- glue::glue("{box_size}x{box_size}+{center_x - box_size/2}+{center_y - box_size/2}")
   sub_img <- image_crop(img, geometry = geometry_string)
   sub_img_gray <- image_convert(sub_img, colorspace = "gray")
   intensity_values <- as.numeric(image_data(sub_img_gray))
   mean_intensity <- mean(intensity_values)
+  print("Mean intensity:")
+  print(mean_intensity)
   return(mean_intensity < threshold)
 }
 
-correction_of_answers <- function(original_sheet, correction_sheet){
-  corrected_sheet <- original_sheet
-  for (i in 1:nrow(original_sheet)) {
-    if (!identical(original_sheet[i, ], correction_sheet[i, ])) {
-      corrected_sheet[i, ] <- correction_sheet[i, ]
-    }
+read_identification_number <- function(img, id_boxes_sorted, 
+                                       box_size = 84, 
+                                       threshold = 0.5) {
+  n_boxes <- nrow(id_boxes_sorted)
+  if (n_boxes != 50) {
+    warning(glue::glue("⚠️ Erwartet: 50 ID-Boxen, gefunden: {n_boxes}"))
   }
-  return(corrected_sheet)
+  
+  id_bits <- logical(n_boxes)
+  
+  for (i in seq_len(n_boxes)) {
+    cx <- id_boxes_sorted[i, 1]
+    cy <- id_boxes_sorted[i, 2]
+    id_bits[i] <- check_if_filled(cx, cy, box_size, img, threshold)
+  }
+  
+  id_selected <- which(id_bits)
+  
+  if (length(id_selected) == 0) {
+    warning("⚠️ Keine ID angekreuzt!")
+    id_number <- NA
+  } else if (length(id_selected) > 1) {
+    warning(glue::glue("⚠️ Mehrere IDs angekreuzt: {paste(id_selected, collapse = ', ')}"))
+    id_number <- id_selected
+  } else {
+    id_number <- id_selected
+  }
+  
+  return(list(id_bits = id_bits, id_number = id_number))
 }
 
-# Initialize for loop
-num_pages <- pdf_length(pdf_path)
-all_answers <- list()
-all_IDs <- list()
+read_answers <- function(img, df_points, box_size = 10, threshold = 0.5) {
+  results <- data.frame(matrix(FALSE, nrow = 25, ncol = 4))
+  colnames(results) <- c("A", "B", "C", "D")
+  
+  for (i in seq_len(nrow(df_points))) {
+    cx <- df_points$V1[i]
+    cy <- df_points$V2[i]
+    
+    # Frage und Option bestimmen:
+    question_idx <- ceiling(i / 4)
+    option_idx <- ((i - 1) %% 4) + 1
 
-# 1) LOOP over pages:----
-for (page in 1:(num_pages)) {
-  # _a) Read image-----
-  image_path <- pdf_convert(pdf_path, format = 'png', pages = page, dpi = 300)
-  img <- image_read(image_path[[1]])
-  img_array <- as.numeric(image_data(img)) / 255  # Skaliere die Werte auf [0, 1]
-  red_channel <- img_array[,,1]
-  green_channel <- img_array[,,2]
-  blue_channel <- img_array[,,3]
-  
-  red_threshold <- 0.6 * max(red_channel)
-  green_threshold <- 0.6 * max(green_channel)
-  blue_threshold <- 0.6 * max(blue_channel)
-  
-  red_mask <- (red_channel > red_threshold) & (green_channel < green_threshold) & (blue_channel < blue_threshold)
-  red_mask_image <- EBImage::Image(red_mask)
-  
-  # _Detect red anchors----
-  red_mask_image <- EBImage::opening(red_mask_image, makeBrush(5, shape = 'disc'))
-  #EBImage::display(red_mask_image)
-  labeled <- EBImage::bwlabel(red_mask_image)
-  rotated_image <- EBImage::rotate(labeled, angle = 90)
-  corrected_image <- EBImage::flop(rotated_image)
-  #EBImage::display(corrected_image, method="raster")
-  #points(object_centers[,"m.cx"], object_centers[,"m.cy"], col = "blue", pch = 4)
-  object_centers <- EBImage::computeFeatures.moment(corrected_image)
-  
-  # Coordinate system:
-  # ------>
-  # |
-  # |
-  # |
-  # v 
-  
-  # Function to choose the upper left or upper right anchor point (out of 4)
-  
-  df_answers <- data.frame(first = rep(FALSE,13), 
-                           second = rep(FALSE,13),
-                           third = rep(FALSE,13),
-                           fourth = rep(FALSE,13))
-  
-  
-  
-  # _b) Read Questions 1-13----
-  
-  # _Box distances----
-  dist_boxes_x <- 392 - 235
-  dist_boxes_y <- 1366/12
-  
-  # _Choose anchor (upper left)
-  anchor <- choose_anchor_point(object_centers)$upper_left
-  
-  # Use the function for each box, assuming object_centers is available and dist_boxes_x, dist_boxes_y are set
-  for (i in 0:12) {
-    for (j in 0:3) {
-      box_center_x <- anchor[1] + 235 + j * dist_boxes_x
-      box_center_y <- anchor[2] + 82 + i * dist_boxes_y
-      df_answers[i+1, j+1] <- is_filled(box_center_x, box_center_y, 30, img)
-    }
+    is_filled <- check_if_filled(cx, cy, box_size, img, threshold)
+    
+    results[question_idx, option_idx] <- is_filled
   }
   
-  #df_answers
-  
-  # _c) Read Questions 14-25----
-  
-  # _Choose anchor (upper right)
-  anchor <- choose_anchor_point(object_centers)$upper_right
-  
-  # _Box distances----
-  dist_boxes_y_14_25 <- (1443-81)/11
-  
-  df_answers_right <- data.frame(first = rep(FALSE,12), # 12 in right column
-                                 second = rep(FALSE,12),
-                                 third = rep(FALSE,12),
-                                 fourth = rep(FALSE,12))
-  
-  # Use the function for each box, assuming object_centers is available and dist_boxes_x, dist_boxes_y are set
-  for (i in 0:11) {
-    for (j in 0:3) {
-      box_center_x <- anchor[1] - 566 + j * dist_boxes_x
-      box_center_y <- anchor[2] + 81 + i * dist_boxes_y_14_25
-      df_answers_right[i+1, j+1] <- is_filled(box_center_x, box_center_y, 30, img)
-    }
-  }
-  
-  #df_answers_right
-  
-  df_answers_all <- rbind(df_answers, df_answers_right) # Answers from both columns
-  #df_answers_all
-  
-  # _d) Read Idendification number (Identifikationsnummer)----
-  path <- "./Identifikationsnummern.xlsx"
-  df <- read_excel(path)
-  #View(df)
-  
-  # _Detect green anchors----
-  green_mask <- (green_channel > green_threshold) & (red_channel < red_threshold) & (blue_channel < blue_threshold)
-  green_mask_image <- EBImage::Image(green_mask)
-  green_mask_image <- EBImage::opening(green_mask_image, makeBrush(5, shape = 'disc'))
-  #EBImage::display(green_mask_image)
-  labeled <- EBImage::bwlabel(green_mask_image)
-  rotated_image <- EBImage::rotate(labeled, angle = 90)
-  corrected_image <- EBImage::flop(rotated_image)
-  # Display the corrected image if needed
-  #EBImage::display(corrected_image, method="raster")
-  object_centers <- EBImage::computeFeatures.moment(corrected_image)
-  
-  left_green_anchor <- object_centers[which.min(object_centers[,"m.cx"]), c("m.cx", "m.cy")]
-  right_green_anchor <- object_centers[which.max(object_centers[,"m.cx"]), c("m.cx", "m.cy")]
-  
-  # _Box distances----
-  #dist_boxes_x_ID <- (1728 - 30)/24
-  dist_boxes_x_ID <- (1743 - 38)/24 # from scan
-  #dist_boxes_x_ID <- (1755 - 50)/24 # from calibration orig pdf file (same!!)
-  
-  # _Reading----
-  ID_numbers <- data.frame(first_row = rep(FALSE,25), 
-                           second_row = rep(FALSE,25))
-  
-  # Use the function for each box, assuming object_centers is available and dist_boxes_x, dist_boxes_y are set
-  for (i in 0:24) {
-    for (j in 0:1) {
-      # First row
-      box_center_x <- left_green_anchor[1] + 51 + i*dist_boxes_x_ID
-      box_center_y <- left_green_anchor[2]
-      ID_numbers[i+1, 1] <- is_filled(box_center_x, box_center_y, 30, img)
-      # Second row
-      box_center_x <- left_green_anchor[1] + 51 + i*dist_boxes_x_ID
-      box_center_y <- left_green_anchor[2] + 106
-      ID_numbers[i+1, 2] <- is_filled(box_center_x, box_center_y, 30, img)
-    }
-  }
-  #ID_numbers
-  IDs <- data.frame(ID = 1:50, ID_ticked = c(ID_numbers$first_row, ID_numbers$second_row))
-  #IDs
-  
-  # Ersetzen Sie df_answers_all und IDs mit Ihren Ergebnissen
-  all_answers[[page]] <- df_answers_all  
-  all_IDs[[page]] <- IDs  
+  return(results)
 }
 
-#all_answers[[1]]
-#length(all_answers)
 
-#all_IDs <- lapply(all_IDs, as.data.table)
-#all_IDs[[1]][ID_ticked == TRUE, c("ID")]
-
-#length(all_IDs)
-
-
-# 2) Compare with Solution and determine points-----
-IDs_on_pages <- c()
-for( i in 1:num_pages ) {
-IDs_on_pages <- append(IDs_on_pages, which(all_IDs[[i]]$ID_ticked==TRUE))
+save_page_with_id_cross <- function(img,
+                                    page,
+                                    id_boxes_sorted,
+                                    id_result,
+                                    outdir = "./Single_Pages_with_ID",
+                                    cross_scale = 0.45,
+                                    lwd = 6,
+                                    file_prefix = "page") {
+  dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
+  
+  # id_result kommt aus read_identification_number()
+  id_number <- id_result$id_number
+  
+  # Welche Box(en) sollen markiert werden?
+  ids_to_mark <- integer(0)
+  if (is.numeric(id_number) && length(id_number) > 0 && !all(is.na(id_number))) {
+    ids_to_mark <- as.integer(id_number)
+  }
+  
+  # Bild zeichnen
+  img_drawn <- image_draw(img)
+  
+  if (length(ids_to_mark) > 0) {
+    for (idx in ids_to_mark) {
+      if (idx >= 1 && idx <= nrow(id_boxes_sorted)) {
+        cx <- id_boxes_sorted[idx, 1]
+        cy <- id_boxes_sorted[idx, 2]
+        
+        # Cross size: wenn width/height vorhanden → nutzen, sonst fallback 30
+        if (ncol(id_boxes_sorted) >= 4) {
+          w <- id_boxes_sorted[idx, 3]
+          h <- id_boxes_sorted[idx, 4]
+          s <- cross_scale * min(w, h)
+        } else {
+          s <- 30
+        }
+        
+        segments(cx - s, cy - s, cx + s, cy + s, col = "red", lwd = lwd)
+        segments(cx - s, cy + s, cx + s, cy - s, col = "red", lwd = lwd)
+      }
+    }
+  } else {
+    # Optional: wenn keine ID gefunden wurde, schreibe Hinweis oben links ins Bild
+    text(50, 80, labels = "NO ID DETECTED", col = "red", cex = 2, pos = 4)
+  }
+  
+  dev.off()
+  
+  outfile <- file.path(outdir, sprintf("%s_%03d.png", file_prefix, page))
+  image_write(img_drawn, path = outfile, format = "png")
+  
+  invisible(outfile)
 }
+
+
+# CHOOSE PDF------------
+getwd()
+pdf_file <- "./ABGABEN/QM1_17.12.25_Scan1.pdf"
+n_pages <- pdf_info(pdf_file)$pages
+
+all_ids <- list() # Identifikationsnummern
+all_answers <- list() # 25 x 4 Antworten per Identifikationsnummer
+
+# Zielordner
+#dir.create("./ABGABEN/_png", showWarnings = FALSE)
+
+# Anzahl Seiten
+n_pages <- pdftools::pdf_info(pdf_file)$pages
+
+# Rendern (robust) mit mutool, falls vorhanden – sonst Fallback auf pdftools
+png_pattern <- "./ABGABEN/_png/page_%03d.png"
+
+if (nzchar(Sys.which("mutool"))) {
+  system2(
+    "mutool",
+    args = c(
+      "draw",
+      "-r", "600",
+      "-o", png_pattern,
+      pdf_file
+    )
+  )
+} else {
+  # Fallback: rendert Seite für Seite
+  for (p in 1:n_pages) {
+    out <- sprintf(png_pattern, p)
+    pdftools::pdf_render_page(pdf_file, page = p, dpi = 600, output = out)
+  }
+}
+# 31 pages converted...
+
+# Liste der erzeugten PNGs
+png_files <- sprintf(png_pattern, 1:n_pages)
+
+
+
+# ---- Loop über alle Seiten ----
+for (page in 1:n_pages) {
+  message(glue::glue("🔄 Verarbeite Seite {page}/{n_pages}..."))
+  
+  # 1️⃣ Seite einlesen
+  #img_filled <- image_read_pdf(pdf_file, density = 300, pages = page)
+  img_filled <- image_read(png_files[page])
+  
+  img_info <- image_info(img_filled)
+  img_height <- img_info$height
+  
+  # 2️⃣ Koordinaten anpassen
+  box_positions_rotated <- box_positions
+  # OFFSET:
+  x_offset <- 165 # negative Werte nach links/positiv nach rechts
+  y_offset <- -405  # positive Werte nach unten/negativ nach oben
+  box_positions_rotated[,1] <- img_info$width - box_positions[,1] + x_offset
+  box_positions_rotated[,2] <- img_height - box_positions[,2] + + y_offset
+  
+  # 3️⃣ Boxen splitten
+  id_boxes <- box_positions_rotated[box_positions_rotated[,2] < 0.4 * img_height, ]
+  answer_boxes <- box_positions_rotated[box_positions_rotated[,2] >= 0.4 * img_height, ]
+  
+  id_boxes_sorted <- id_boxes[order(id_boxes[,2], id_boxes[,1]), ]
+  
+  df_points <- as.data.frame(answer_boxes)
+  colnames(df_points) <- c("V1", "V2", "width", "height")
+  
+  # Trennen in linke & rechte Spalte
+  x_threshold <- mean(df_points$V1)
+  
+  df_left <- df_points %>% dplyr::filter(V1 < x_threshold)
+  df_right <- df_points %>% dplyr::filter(V1 >= x_threshold)
+  
+  df_left_sorted <- df_left %>%
+    dplyr::arrange(V2, V1) %>%
+    dplyr::mutate(question = rep(1:12, each = 4),
+           option = rep(c("A", "B", "C", "D"), 12))
+  
+  df_right_sorted <- df_right %>%
+    dplyr::arrange(V2, V1) %>%
+    dplyr::mutate(question = rep(13:25, each = 4),
+           option = rep(c("A", "B", "C", "D"), 13))
+  
+  df_points_final <- bind_rows(df_left_sorted, df_right_sorted) %>%
+    dplyr::arrange(question, option)
+  
+  # 4️⃣ IDs einlesen
+  id_result <- read_identification_number(img_filled, id_boxes_sorted)
+  all_ids[[page]] <- id_result
+  
+  # DEBUG-Bild mit rotem Kreuz speichern
+  save_page_with_id_cross(
+    img = img_filled,
+    page = page,
+    id_boxes_sorted = id_boxes_sorted,
+    id_result = id_result,
+    outdir = "./Single_Pages_with_ID"
+  )
+  
+  # 5️⃣ Antworten einlesen
+  answers_df <- read_answers(img_filled, df_points_final)
+  all_answers[[page]] <- answers_df
+}
+
+# ---- Ausgabe zusammenfassen ----
+# IDs
+print(all_ids)
+all_ids[[1]] # ID der ersten Seite
+# Extrahiere die ID-Nummern als numeric vector
+id_numbers <- map_dbl(all_ids, ~ .x$id_number)
+print(id_numbers)
+
+# Antworten (erste Seite als Beispiel)
+print(all_answers[[1]])
+all_answers
+
+
+
+# Punkte berechnen------------
 correct_answers <- readRDS("correct_answers.RDS")
-
-# ANY correction sheets are present
-if( any(which(table(IDs_on_pages) > 1)) ) { 
-  double_IDs <- as.numeric(names(table(IDs_on_pages)[which(table(IDs_on_pages) > 1)])) # at least double
-  print(paste0("Folgende Identifikationsnummern haben mehr als 1 Antwortblatt abgegeben: ", double_IDs))
-  
-  # Which one (of the both) is the correction sheet?
-  sum_ticked <- data.frame(IDs_on_pages = IDs_on_pages, sum_points_on_sheet = NA)
-  for(i in 1:num_pages){
-    sum_ticked$sum_points_on_sheet[i] <- sum(all_answers[[i]])
-  }
-  sum_ticked <- sum_ticked %>%
-    group_by(IDs_on_pages) %>%
-    mutate(correction_sheet = ifelse((IDs_on_pages %in% double_IDs) & 
-                                       (sum_points_on_sheet == min(sum_points_on_sheet)), 
-                                     TRUE, FALSE)) %>% # mark the correction sheets
-    ungroup()
-  # Correction_of_answers:
-  for( j in 1:length(double_IDs) ) {
-    ind_orig_sheet <- which(sum_ticked$IDs_on_pages == double_IDs[j] & sum_ticked$correction_sheet == TRUE)
-    ind_corr_sheet <- which(sum_ticked$IDs_on_pages == double_IDs[j] & sum_ticked$correction_sheet == FALSE)
-    all_answers[[ind_orig_sheet]] <- correction_of_answers(all_answers[[ind_orig_sheet]], 
-                                                           all_answers[[ind_corr_sheet]])
-  }
-  
-  ind_all_orig <- which(sum_ticked$correction_sheet == FALSE)
-  all_answers <- all_answers[ind_all_orig]
-  IDs_for_points <- IDs_on_pages[ind_all_orig]
-  
-  df_ID_Points <- data.frame(ID = numeric(50), Points = numeric(50))
-  
-  for( i in 1:length(ind_all_orig) ){
-    df_ID_Points[i,]$ID <- IDs_for_points[i]
-    df_ID_Points[i,]$Points <- sum(correct_answers == all_answers[[i]]) # compare and sum correct answers
-  }
-  IDs_with_points <- df_ID_Points$ID[which(df_ID_Points$ID != 0)]
-  
-  df$Punkte <- numeric(50)
-  df <- as.data.table(df)
-  df_ID_Points <- as.data.table(df_ID_Points)
-  
-  for(i in 1:50){
-    if( df_ID_Points$ID[i] > 0){
-      ID_number_to_write_to <- df_ID_Points$ID[i]
-      df$Punkte[ID_number_to_write_to] <- df_ID_Points$Points[i]
-    }
-  }
-  #df[Identifikationsnummer %in% IDs_with_points,]$Punkte <- df_ID_Points[ID %in% IDs_with_points,]$Points
-  
-  
-  write_xlsx(df, "Namen_Punkte.xlsx")
-  
-} else { # No correction sheets in the stack
-  df_ID_Points <- data.frame(ID = numeric(50), Points = numeric(50))
-  
-  for( i in 1:num_pages ){
-    df_ID_Points[i,]$ID <- which(all_IDs[[i]]$ID_ticked==TRUE)
-    df_ID_Points[i,]$Points <- sum(correct_answers == all_answers[[i]])
-  }
-  
-  IDs_with_points <- df_ID_Points$ID[which(df_ID_Points$ID != 0)]
-  
-  df$Punkte <- numeric(50)
-  df <- as.data.table(df)
-  df_ID_Points <- as.data.table(df_ID_Points)
-  
-  for(i in 1:50){
-    if( df_ID_Points$ID[i] > 0){
-      ID_number_to_write_to <- df_ID_Points$ID[i]
-      df$Punkte[ID_number_to_write_to] <- df_ID_Points$Points[i]
-    }
-  }
-  
-  #df[Identifikationsnummer %in% IDs_with_points,]$Punkte <- df_ID_Points[ID %in% IDs_with_points,]$Points
-  
-  write_xlsx(df, "Namen_Punkte.xlsx")
-}
-
-# Overview----
-df %>% filter(Punkte > 0 & Punkte < 60)
-max(df$Punkte)
-
-# Punktehistogram----
-df %>% filter(Punkte > 0) %>%
-ggplot(aes(x=Punkte)) + 
-  geom_histogram()
-
-summary(df$Punkte[df$Punkte>0])
+scores <- map_dbl(all_answers, ~ sum(.x == correct_answers))
+print(scores)
 
 
+# Ergebnisse----
+df <- data.frame(
+  Identifikationsnummern = id_numbers,
+  Punkte = scores
+)
+df 
+
+# Read Identifikationsnummern and create Namen_Punkte___.xlsx
+
+df_IDs <- read_excel("Identifikationsnummern.xlsx")
+
+df <- df %>%
+  dplyr::left_join(df_IDs, by = "Identifikationsnummern")
+
+
+df
+
+# ADD points for additional riddle:
+# df_riddle <- read_excel("Identifikationsnummern_Zusatzbsp_korrekt.xlsx")
+# 
+# df <- df %>%
+#   dplyr::left_join(df_riddle %>% dplyr::select(-c(Vorname, Nachname)), by = "Identifikationsnummern")
+# head(df)
+# df$PunkteZusatzBsp <- ifelse(is.na(df$PunkteZusatzBsp), 0, df$PunkteZusatzBsp)
+# df
+# 
+# df <- df %>% 
+#   dplyr::mutate(Punkte_incl_bonus = Punkte +PunkteZusatzBsp)
+# df
+
+write_xlsx(df, "./ABGABEN/Namen_Punkte_17.7.25_Scan1.xlsx")

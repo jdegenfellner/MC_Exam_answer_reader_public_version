@@ -1,7 +1,5 @@
-# Notenauswertungen QM1
+# Notenauswertungen
 # Juergen Degenfellner, 21.12.23
-
-# From: https://github.com/jdegenfellner/MC_Exam_answer_reader
 
 library(pacman)
 p_load(readxl, writexl, tidyverse, data.table, fancycut)
@@ -9,32 +7,25 @@ p_load(readxl, writexl, tidyverse, data.table, fancycut)
 # Set working directory to source file location
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
-df <- read_excel("0__SEMI_AUTOMATIC_RESULTS_reader_broken_17.12.25.xlsx", sheet = 1)
-
-hist(df$Punkte)
+df <- read_excel("./Namen_Punkte.xlsx", sheet = 1)
 
 df <- as.data.table(df)
 # 60% hard cutoff for positive
-intervals <- c('[0.00,59]','[60.00,64.44]', '(64.44,68.89]', '(68.89,73.33]', 
+intervals <- c('[60.00,64.44]', '(64.44,68.89]', '(68.89,73.33]', 
                '(73.33,77.78]', '(77.78,82.22]', '(82.22,86.67]', 
                '(86.67,91.11]', '(91.11,95.56]', '(95.56,100]')
 grades <- seq(4.0, 6.0, by = 0.25)
-grades <- c(-1, grades) # for not passed
-
-dim(df) # 36
 
 df$Note <- wafflecut(df$Punkte, intervals, grades)
 
-df %>%
-  mutate(Note = fct_recode(Note, "not_passed" = "-1")) %>%
-  dplyr::filter(Punkte > 0)  %>% ggplot(aes(x = Note)) + 
+df %>% filter(Punkte > 0)  %>% ggplot(aes(x = Note)) + 
   geom_bar() + 
   geom_text(stat='count', aes(label = after_stat(count)), vjust=-0.3) +
   ggtitle("Notenübersicht") + 
-  ylab("Anzahl") +
   theme(plot.title = element_text(hjust = 0.5))#
 
-write_xlsx(df, "Noten_calculated_QM1_17.12.25.xlsx")
+# Example
+write_xlsx(df, "Noten_calculated_2.5.24.xlsx")
 
 
 df
